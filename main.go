@@ -30,11 +30,11 @@ func echoSuccess(str string) {
 func echoError(str string) {
 	fmt.Printf("\033[1;31;40m%s\033[0m\n", str)
 }
+
 func main() {
 	echoSuccess(welcome)
 	DirExists(inputDir)
 	DirExists(outputDir)
-	echoSuccess("-----------------开始扫描文件夹------------------------")
 	walkDir()
 }
 
@@ -45,10 +45,11 @@ func walkDir() {
 			if err != nil {
 				return err
 			}
-			if path.Ext(filePath) == ".png" ||
+
+			if (path.Ext(filePath) == ".png" ||
 				path.Ext(filePath) == ".jpg" ||
 				path.Ext(filePath) == ".webp" ||
-				path.Ext(filePath) == ".jpeg" {
+				path.Ext(filePath) == ".jpeg") && info.Size() <= 5242880 {
 
 				readyDownloadNum++
 				fileAbsPath, _ := filepath.Abs(filePath)
@@ -66,13 +67,13 @@ func walkDir() {
 	}
 
 	echoSuccess(fmt.Sprintf("总共扫描到%d个文件", readyDownloadNum))
-	echoSuccess("-----------------扫描结束------------------------")
-	echoSuccess("-----------------开始下载------------------------")
+
+	echoSuccess("=============开始下载=============")
 	for _, filePath := range filePaths {
 		SendUpload(filePath.Path, filePath.Name)
 	}
 
-	echoSuccess("-----------------下载结束------------------------")
+	echoSuccess("=============下载结束=============")
 }
 
 // 开始下载
@@ -81,7 +82,7 @@ func SendUpload(filePath, fileName string) {
 	if err != nil {
 		echoError(fmt.Sprintf("下载失败(%d/%d):下载失败文件名:%s", progressNum, readyDownloadNum, fileName))
 	} else {
-		echoSuccess(fmt.Sprintf("下载成功(%d/%d):下载后保存位置:%s", progressNum, readyDownloadNum, filePath))
+		echoSuccess(fmt.Sprintf("下载成功(%d/%d):下载后保存位置:%s", progressNum, readyDownloadNum, outputDir+"/"+fileName))
 	}
 
 	progressNum++
