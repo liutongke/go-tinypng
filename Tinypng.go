@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"time"
 )
 
-type Tinypng struct {
+type TinyPngResponse struct {
 	Input struct {
 		Size int    `json:"size"`
 		Type string `json:"type"`
@@ -33,7 +32,6 @@ func Uploads(filePath, fileName string) (error, *Output) {
 
 	payload, err := os.Open(filePath)
 	if err != nil {
-		fmt.Println(err)
 		return err, nil
 	}
 	defer payload.Close()
@@ -42,7 +40,6 @@ func Uploads(filePath, fileName string) (error, *Output) {
 	req, err := http.NewRequest(method, url, payload)
 
 	if err != nil {
-		fmt.Println(err)
 		return err, nil
 	}
 
@@ -63,55 +60,52 @@ func Uploads(filePath, fileName string) (error, *Output) {
 	res, err := client.Do(req)
 
 	if err != nil {
-		fmt.Println(err)
 		return err, nil
 	}
 
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		fmt.Println(err)
 		return err, nil
 	}
 
-	tinypngData := Tinypng{}
-	jsonerr := json.Unmarshal(body, &tinypngData)
-	if jsonerr != nil {
-		fmt.Println("json数据有误", jsonerr, string(body))
-		return jsonerr, nil
+	TinyPngResponseData := TinyPngResponse{}
+	err = json.Unmarshal(body, &TinyPngResponseData)
+	if err != nil {
+		return err, nil
 	}
 
-	download(tinypngData.Output.Url, fileName)
+	err = download(TinyPngResponseData.Output.Url, fileName)
+	if err != nil {
+		return err, nil
+	}
 
 	return nil, &Output{
-		Url:  tinypngData.Output.Url,
+		Url:  TinyPngResponseData.Output.Url,
 		Name: fileName,
 	}
 }
 
-func download(url string, filename string) {
+func download(url string, filename string) error {
 	res, err := http.Get(url)
 	if err != nil {
-		log.Printf("http.Get -> %v", err)
-		return
+		return err
 	}
 
 	data, err := io.ReadAll(res.Body)
 
 	if err != nil {
-		log.Printf("ioutil.ReadAll -> %s", err.Error())
-		return
+		return err
 	}
 	defer res.Body.Close()
 
-	if err = os.WriteFile(outputDir+"/"+filename, data, 0777); err != nil {
-		log.Println("Error Saving:", filename, err)
-	} else {
-		//log.Println("Saved:", filename)
+	err = os.WriteFile(outputDir+"/"+filename, data, 0777)
+	if err != nil {
+		return err
 	}
+	return nil
 }
 
-// {"input":{"size":1288562,"type":"image/png"},"output":{"size":485959,"type":"image/png","width":4167,"height":4167,"ratio":0.3771,"url":"https://tinypng.com/web/output/uucc3u30rnfn9xzdb5zf00ab58z19h2k"}}
 type Output struct {
 	Ratio float64 `json:"ratio"`
 	Url   string  `json:"url"`
@@ -121,6 +115,5 @@ type Output struct {
 
 func genIpaddr() string {
 	rand.Seed(time.Now().Unix())
-	ip := fmt.Sprintf("%d.%d.%d.%d", rand.Intn(255), rand.Intn(255), rand.Intn(255), rand.Intn(255))
-	return ip
+	return fmt.Sprintf("%d.%d.%d.%d", rand.Intn(255), rand.Intn(255), rand.Intn(255), rand.Intn(255))
 }

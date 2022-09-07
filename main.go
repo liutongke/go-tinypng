@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -11,11 +10,12 @@ import (
 var (
 	inputDir  = "./tinypng-input"  //输出的文件夹
 	outputDir = "./tinypng-output" //输入的文件夹
-	filePaths = []*files{}
+	filePaths []*files
 
 	readyDownloadNum = 0 //需要下载的文件数量
-	l                = []string{}
 	progressNum      = 1
+
+	welcome = "\n               _   _                               \n              | | (_)                              \n  __ _  ___   | |_ _ _ __  _   _ _ __  _ __   __ _ \n / _` |/ _ \\  | __| | '_ \\| | | | '_ \\| '_ \\ / _` |\n| (_| | (_) | | |_| | | | | |_| | |_) | | | | (_| |\n \\__, |\\___/   \\__|_|_| |_|\\__, | .__/|_| |_|\\__, |\n  __/ |                     __/ | |           __/ |\n |___/                     |___/|_|          |___/ \n"
 )
 
 type files struct {
@@ -31,6 +31,7 @@ func echoError(str string) {
 	fmt.Printf("\033[1;31;40m%s\033[0m\n", str)
 }
 func main() {
+	echoSuccess(welcome)
 	DirExists(inputDir)
 	DirExists(outputDir)
 	echoSuccess("-----------------开始扫描文件夹------------------------")
@@ -44,9 +45,6 @@ func walkDir() {
 			if err != nil {
 				return err
 			}
-			//fmt.Println(info.Name(), path.Ext(filePath))
-			//abs, _ := filepath.Abs(path)
-			//fmt.Println(abs, info.Size())
 			if path.Ext(filePath) == ".png" ||
 				path.Ext(filePath) == ".jpg" ||
 				path.Ext(filePath) == ".webp" ||
@@ -55,7 +53,6 @@ func walkDir() {
 				readyDownloadNum++
 				fileAbsPath, _ := filepath.Abs(filePath)
 
-				//fmt.Println(readyDownloadNum, filePath, path.Ext(filePath))
 				filePaths = append(filePaths, &files{
 					Path: fileAbsPath,
 					Name: info.Name(),
@@ -64,12 +61,12 @@ func walkDir() {
 			return nil
 		})
 	if err != nil {
-		log.Println(err)
+		echoError("扫描文件夹失败")
+		os.Exit(0)
 	}
 
 	echoSuccess(fmt.Sprintf("总共扫描到%d个文件", readyDownloadNum))
 	echoSuccess("-----------------扫描结束------------------------")
-	//echoSuccess("-----------------开始压缩------------------------")
 	echoSuccess("-----------------开始下载------------------------")
 	for _, filePath := range filePaths {
 		SendUpload(filePath.Path, filePath.Name)
@@ -80,14 +77,13 @@ func walkDir() {
 
 // 开始下载
 func SendUpload(filePath, fileName string) {
-	uploadErr, data := Uploads(filePath, fileName) //开始压缩
-	if uploadErr != nil {
-		echoError(fmt.Sprintf("压缩失败(%d/%d):%s,压缩失败文件名:%s", progressNum, readyDownloadNum, data.Url, fileName))
+	err, _ := Uploads(filePath, fileName) //开始下载
+	if err != nil {
+		echoError(fmt.Sprintf("下载失败(%d/%d):下载失败文件名:%s", progressNum, readyDownloadNum, fileName))
 	} else {
-		echoSuccess(fmt.Sprintf("压缩成功(%d/%d):压缩后保存位置:%s", progressNum, readyDownloadNum, filePath))
+		echoSuccess(fmt.Sprintf("下载成功(%d/%d):下载后保存位置:%s", progressNum, readyDownloadNum, filePath))
 	}
 
-	l = append(l, data.Url)
 	progressNum++
 }
 
