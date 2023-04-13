@@ -27,7 +27,7 @@ type TinyPngResponse struct {
 
 func Uploads(filePath, fileName string) (error, *Output) {
 
-	url := "https://tinypng.com/web/shrink"
+	url := "https://tinypng.com/backend/opt/shrink"
 	method := "POST"
 
 	payload, err := os.Open(filePath)

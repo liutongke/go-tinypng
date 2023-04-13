@@ -5,9 +5,18 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sync"
+	"time"
 )
 
+type Res struct {
+	IsSucc bool
+	Title  string
+}
+
 var (
+	Wg        sync.WaitGroup
+	Chan1     = make(chan *Res, 10000)
 	inputDir  = "./tinypng-input"  //输出的文件夹
 	outputDir = "./tinypng-output" //输入的文件夹
 	filePaths []*files
@@ -32,10 +41,14 @@ func echoError(str string) {
 }
 
 func main() {
+	go uploadNotifyChan()
+
 	echoSuccess(welcome)
 	DirExists(inputDir)
 	DirExists(outputDir)
 	walkDir()
+	Wg.Wait()
+	echoSuccess("=============下载结束=============")
 }
 
 // 扫描文件夹中的文件
@@ -70,19 +83,26 @@ func walkDir() {
 
 	echoSuccess("=============开始下载=============")
 	for _, filePath := range filePaths {
-		SendUpload(filePath.Path, filePath.Name)
+		go SendUpload(filePath.Path, filePath.Name)
+		time.Sleep(1 * time.Second)
 	}
 
-	echoSuccess("=============下载结束=============")
 }
 
 // 开始下载
 func SendUpload(filePath, fileName string) {
+	Wg.Add(1)
 	err, _ := Uploads(filePath, fileName) //开始下载
 	if err != nil {
-		echoError(fmt.Sprintf("下载失败(%d/%d):下载失败文件名:%s", progressNum, readyDownloadNum, fileName))
+		Chan1 <- &Res{
+			IsSucc: false,
+			Title:  fmt.Sprintf("下载失败(%d/%d):下载失败文件名:%s", progressNum, readyDownloadNum, fileName),
+		}
 	} else {
-		echoSuccess(fmt.Sprintf("下载成功(%d/%d):下载后保存位置:%s", progressNum, readyDownloadNum, outputDir+"/"+fileName))
+		Chan1 <- &Res{
+			IsSucc: true,
+			Title:  fmt.Sprintf("下载成功(%d/%d):下载后保存位置:%s", progressNum, readyDownloadNum, outputDir+"/"+fileName),
+		}
 	}
 
 	progressNum++
@@ -104,4 +124,17 @@ func DirExists(path string) (bool, error) {
 		}
 	}
 	return false, err
+}
+
+func uploadNotifyChan() {
+	for data := range Chan1 {
+		if data.IsSucc {
+			echoSuccess(data.Title)
+			Wg.Done()
+		}
+		if !data.IsSucc {
+			echoSuccess(data.Title)
+			Wg.Done()
+		}
+	}
 }

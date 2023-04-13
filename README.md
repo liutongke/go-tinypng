@@ -13,8 +13,9 @@
 
 ### **直接运行**
 
-1.将需要压缩的图片放入项目根目录`tinypng-input`文件夹中
-2.打开`CMD`，输入以下命令执行
+*  1.将需要压缩的图片放入项目根目录`tinypng-input`文件夹中
+
+*  2.打开`CMD`，输入以下命令执行
 
 ```
 go run main.go Tinypng.go
