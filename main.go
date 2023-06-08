@@ -5,6 +5,7 @@ import (
 )
 
 func main() {
+	utils.Init()
 	utils.ListenImg()
 	//utils.ListenText()
 }

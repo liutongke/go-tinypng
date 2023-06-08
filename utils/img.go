@@ -166,18 +166,27 @@ func PasteImg(outputPng bool) ([]byte, error) {
 }
 
 func SaveImg(img []byte) {
-	name := fmt.Sprintf("tinypng-input/%s.png", GenerateImgName())
+	name := GenerateImgName()
+	inputFilePath := fmt.Sprintf("tinypng-input/%s.png", name)
 
-	fmt.Println("剪贴板内容变化", name)
+	fmt.Println("原始文件：", inputFilePath)
 
-	f, err := os.OpenFile(name, os.O_WRONLY, 0666)
+	f, err := os.OpenFile(inputFilePath, os.O_WRONLY, 0666)
 	if err != nil {
-		f, err = os.Create(name)
+		f, err = os.Create(inputFilePath)
 	}
 	if err == nil {
 		f.Write(img)
 		f.Close()
 	}
+
+	outputFilePath := fmt.Sprintf("%s/%s.png", GetConfDir()["output"], name)
+
+	err, o := Uploads(img, outputFilePath)
+	if err != nil {
+		return
+	}
+	fmt.Println("压缩后文件:", o.Name)
 }
 
 func GenerateImgName() string {
@@ -186,7 +195,7 @@ func GenerateImgName() string {
 
 func ListenImg() {
 	// 创建一个用于接收剪贴板内容变化的通道
-	clipboardCh := make(chan []byte)
+	clipboardCh := make(chan []byte, 10)
 
 	// 启动一个 goroutine 持续监听剪贴板变化
 	go func() {
@@ -209,6 +218,7 @@ func ListenImg() {
 		}
 	}()
 
+	fmt.Println("启动成功")
 	// 在主 goroutine 中读取剪贴板内容变化
 	for {
 		clipboardText := <-clipboardCh
