@@ -1,8 +1,10 @@
 package main
 
-import "tinypng/utils"
+import (
+	"tinypng/utils"
+)
 
 func main() {
-	utils.Listen()
+	utils.ListenImg()
 	//utils.ListenText()
 }

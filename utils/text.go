@@ -36,34 +36,8 @@ func Listen() {
 	fmt.Println("Bitmap Height:", bitmapInfo.BmHeight)
 	fmt.Println("bitmapInfo.BmType:", bitmapInfo.BmType)
 	fmt.Println("bitmapInfo.BmBits:", bitmapInfo.BmBits)
+	fmt.Println("bitmapInfo.BmBitsPixel:", bitmapInfo.BmBitsPixel)
 	// 在这里可以使用其他函数对位图进行处理，例如保存到文件或显示在窗口中
-
-	// 获取位图像素数据
-	hDC := win.GetDC(0)
-	defer win.ReleaseDC(0, hDC)
-
-	// 创建一个与位图大小相同的内存设备上下文
-	memDC := win.CreateCompatibleDC(hDC)
-	defer win.DeleteDC(memDC)
-
-	// 选中位图到内存设备上下文
-	prevObj := win.SelectObject(memDC, win.HGDIOBJ(hBitmap))
-	defer win.SelectObject(memDC, prevObj)
-
-	// 计算位图像素数据的大小
-	bitmapBytes := int(bitmapInfo.BmWidthBytes) * int(bitmapInfo.BmHeight)
-	bitmapData := make([]byte, bitmapBytes)
-
-	// 获取位图像素数据
-	bitmapBits := uintptr(unsafe.Pointer(&bitmapData[0]))
-	result := win.GetDIBits(memDC, win.HBITMAP(hBitmap), 0, uint32(bitmapInfo.BmHeight), bitmapBits, (*win.BITMAPINFO)(unsafe.Pointer(&bitmapInfo)), win.DIB_RGB_COLORS)
-	if result == 0 {
-		fmt.Println("Failed to get bitmap bits")
-		return
-	}
-
-	// 打印位图像素数据的大小
-	fmt.Println("Bitmap Pixel Data Size:", len(bitmapData))
 
 }
 
