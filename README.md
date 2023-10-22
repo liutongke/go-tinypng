@@ -17,7 +17,7 @@
 * 2.打开`CMD`，输入以下命令执行
 
 ```
-go run main.go Tinypng.go
+go run main.go
 ```
 
 Windows系统免安装客户端版：[Releases · liutongke/go-tinypng (github.com)](https://github.com/liutongke/go-tinypng/releases)
@@ -49,7 +49,7 @@ Windows系统免安装客户端版：[Releases · liutongke/go-tinypng (github.c
 2. Open `CMD` and enter the following command to execute.
 
 ```
-go run main.go Tinypng.go
+go run main.go
 ```
 
 Windows system portable client version (no need to
