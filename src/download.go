@@ -16,11 +16,12 @@ type files struct {
 }
 
 var (
-	Wg        sync.WaitGroup
-	Chan1     = make(chan *Res, 10000)
-	InputDir  = "./tinypng-input"  //输出的文件夹
-	OutputDir = "./tinypng-output" //输入的文件夹
-	filePaths []*files
+	Wg                  sync.WaitGroup
+	Chan1               = make(chan *Res, 10000)
+	DownloadFailedQueue = make(chan *files, 1000) //下载失败等待重新下载的队列
+	InputDir            = "./tinypng-input"       //需要压缩的文件夹位置
+	OutputDir           = "./tinypng-output"      //压缩后的输入的文件夹
+	filePaths           []*files
 
 	readyDownloadNum = 0 //需要下载的文件数量
 	progressNum      = 1
@@ -28,10 +29,11 @@ var (
 	Welcome = "\n               _   _                               \n              | | (_)                              \n  __ _  ___   | |_ _ _ __  _   _ _ __  _ __   __ _ \n / _` |/ _ \\  | __| | '_ \\| | | | '_ \\| '_ \\ / _` |\n| (_| | (_) | | |_| | | | | |_| | |_) | | | | (_| |\n \\__, |\\___/   \\__|_|_| |_|\\__, | .__/|_| |_|\\__, |\n  __/ |                     __/ | |           __/ |\n |___/                     |___/|_|          |___/ \n"
 )
 
-// 开始下载
+// SendUpload 开始下载
 func SendUpload(filePath, fileName string) {
 	Wg.Add(1)
-	err, _ := Uploads(filePath, fileName) //开始下载
+	_, err := UploadAndDownload(filePath, fileName) //开始下载
+
 	if err != nil {
 		Chan1 <- &Res{
 			IsSucc: false,

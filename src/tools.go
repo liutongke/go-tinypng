@@ -15,18 +15,15 @@ func DirExists(path string) (bool, error) {
 		return true, nil
 	}
 	if os.IsNotExist(err) {
-		// 创建文件夹
-		err := os.MkdirAll(path, os.ModePerm)
-		if err != nil {
-			fmt.Printf("mkdir failed![%v]\n", err)
-		} else {
-			return true, nil
+		if err := os.MkdirAll(path, os.ModePerm); err != nil {
+			return false, err
 		}
+		return true, nil
 	}
 	return false, err
 }
 
-// 扫描文件夹中的文件
+// WalkDir 扫描文件夹中的文件
 func WalkDir() {
 	err := filepath.Walk(InputDir,
 		func(filePath string, info os.FileInfo, err error) error {
@@ -51,7 +48,7 @@ func WalkDir() {
 		})
 	if err != nil {
 		EchoError("扫描文件夹失败")
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	EchoSuccess(fmt.Sprintf("总共扫描到%d个文件", readyDownloadNum))
