@@ -1,11 +1,12 @@
 package src
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
-	"time"
 )
 
 // DirExists 判断文件夹是否存在
@@ -23,8 +24,8 @@ func DirExists(path string) (bool, error) {
 	return false, err
 }
 
-// WalkDir 扫描文件夹中的文件
-func WalkDir() {
+// ScanAndDownload 扫描文件夹中的文件
+func ScanAndDownload() {
 	err := filepath.Walk(InputDir,
 		func(filePath string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -55,10 +56,26 @@ func WalkDir() {
 
 	EchoSuccess("=============开始下载=============")
 	for _, filePath := range filePaths {
-		go SendUpload(filePath.Path, filePath.Name)
-		time.Sleep(1 * time.Second)
+		SendUpload(filePath.Path, filePath.Name)
 	}
 
+	//错误重试
+	retryDownloads()
+}
+
+func retryDownloads() {
+	if len(DownloadFailedQueue) > 0 {
+		EchoError(fmt.Sprintf("%d个文件下载失败,重试中...", len(DownloadFailedQueue)))
+		for hashId, filePath := range DownloadFailedQueue {
+			if SendUpload(filePath.Path, filePath.Name) {
+				delete(DownloadFailedQueue, hashId)
+			}
+		}
+	}
+
+	if len(DownloadFailedQueue) > 0 {
+		retryDownloads()
+	}
 }
 
 func EchoSuccess(str string) {
@@ -67,4 +84,11 @@ func EchoSuccess(str string) {
 
 func EchoError(str string) {
 	fmt.Printf("\033[1;31;40m%s\033[0m\n", str)
+}
+
+func GetMD5Hash(input string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(input))
+	hash := hasher.Sum(nil)
+	return hex.EncodeToString(hash)
 }
